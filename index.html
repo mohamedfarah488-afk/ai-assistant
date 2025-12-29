@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد د. محمد فارح الأكاديمي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #D4AF37; --green: #1B4332; --black: #121212; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--black); color: white; margin: 0; padding: 20px; text-align: center; }
+        .card { background: white; color: #333; padding: 25px; border-radius: 20px; max-width: 500px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { font-family: 'Amiri', serif; color: var(--gold); }
+        textarea { width: 100%; border: 2px solid #ddd; border-radius: 12px; padding: 15px; font-size: 1rem; box-sizing: border-box; resize: none; }
+        button { background: var(--green); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        button:disabled { background: #888; }
+        #resultWrapper { margin-top: 30px; display: none; text-align: right; }
+        .letter-paper { background: #fff; color: #333; padding: 30px; border-top: 8px solid var(--green); line-height: 1.8; white-space: pre-wrap; }
+        .err-msg { color: #ff4d4d; font-size: 0.8rem; margin-top: 10px; display: none; padding: 10px; background: #fff1f1; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <h1>د. محمد فارح</h1>
+    <p style="color: #aaa;">رئيس قسم اللغة والأدب العربي</p>
+
+    <div class="card">
+        <textarea id="userInput" rows="4" placeholder="اكتب موضوع الخطاب هنا..."></textarea>
+        <button id="mainBtn" onclick="generateLetter()">توليد الخطاب الرسمي بالـ AI</button>
+        <div id="errorBox" class="err-msg"></div>
+    </div>
+
+    <div id="resultWrapper">
+        <div class="letter-paper" id="letterContent"></div>
+    </div>
+
+    <script>
+        // مفتاحك الصالح من الصورة الأولى
+        const API_KEY = "AIzaSyCRWq1Mw41Ls8jV1aXqoKHN1oFaNkGpVQ8"; 
+        // الرابط المحدث والمتوافق مع استضافات الويب
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+        async function generateLetter() {
+            const input = document.getElementById('userInput').value;
+            const output = document.getElementById('letterContent');
+            const wrapper = document.getElementById('resultWrapper');
+            const btn = document.getElementById('mainBtn');
+            const errorBox = document.getElementById('errorBox');
+
+            if (!input) return;
+            btn.innerText = "جاري الصياغة... ⏳";
+            btn.disabled = true;
+            errorBox.style.display = "none";
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `اكتب خطاباً رسمياً بليغاً جداً بلسان رئيس قسم اللغة العربية الدكتور محمد فارح حول: ${input}` }] }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                if (data.candidates) {
+                    output.innerText = data.candidates[0].content.parts[0].text;
+                    wrapper.style.display = 'block';
+                }
+            } catch (err) {
+                errorBox.innerText = "فشل: " + err.message;
+                errorBox.style.display = "block";
+            } finally {
+                btn.innerText = "توليد الخطاب الرسمي بالـ AI";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
