@@ -3,105 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المساعد الأكاديمي المتقدم - د. محمد فارح</title>
+    <title>مساعد د. محمد فارح</title>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #D4AF37; --green: #1B4332; --black: #121212; --white: #FFFFFF; }
         body { font-family: 'Tajawal', sans-serif; background: var(--black); color: var(--white); margin: 0; padding: 15px; }
-        .app-container { max-width: 700px; margin: auto; }
-        .header { text-align: center; padding: 20px; border-bottom: 2px solid var(--gold); margin-bottom: 20px; }
+        .app-container { max-width: 600px; margin: auto; }
         .card { background: var(--white); color: #333; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         select, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-family: 'Tajawal'; font-size: 1rem; margin-bottom: 15px; box-sizing: border-box; }
         .btn-main { background: var(--green); color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .btn-main:disabled { background: #666; }
-        .output-area { margin-top: 25px; display: none; background: #fff; color: #222; padding: 25px; border-radius: 10px; border-right: 8px solid var(--gold); line-height: 1.8; text-align: right; }
-        .error { color: #ff4d4d; background: #fff1f1; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; font-size: 0.9rem; }
-        .badge { display: inline-block; padding: 5px 10px; background: var(--gold); color: black; border-radius: 5px; font-size: 0.8rem; margin-bottom: 10px; font-weight: bold; }
+        .output-area { margin-top: 25px; display: none; background: #fff; color: #222; padding: 20px; border-radius: 10px; border-right: 8px solid var(--gold); line-height: 1.8; text-align: right; }
+        .error { color: #ff4d4d; background: #fff1f1; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; font-size: 0.8rem; border: 1px solid #ffcccc; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="header">
+    <div style="text-align: center; padding: 20px;">
         <h1 style="font-family: 'Amiri'; color: var(--gold); margin: 0;">د. محمد فارح</h1>
-        <p style="margin: 5px 0; opacity: 0.8;">المساعد الذكي لرئيس القسم (Gemini 2.0)</p>
+        <p style="opacity: 0.8;">المساعد الأكاديمي الذكي (نسخة مستقرة)</p>
     </div>
 
     <div class="card">
-        <label>حدد المهمة المطلوبة:</label>
-        <select id="actionMode">
-            <option value="draft">🖋️ صياغة خطاب رسمي محكم</option>
-            <option value="summarize">📋 تلخيص مراسلات أو محاضر</option>
-            <option value="consult">💡 استشارة إدارية وأكاديمية</option>
-            <option value="tasks">✅ استخراج وضبط المهام من نص</option>
+        <label>المهمة:</label>
+        <select id="mode">
+            <option value="draft">🖋️ صياغة خطاب رسمي</option>
+            <option value="sum">📋 تلخيص محتوى</option>
+            <option value="task">✅ استخراج المهام</option>
+            <option value="adv">💡 استشارة إدارية</option>
         </select>
 
-        <label>أدخل النص أو الموضوع:</label>
-        <textarea id="userInput" rows="6" placeholder="اكتب التفاصيل هنا..."></textarea>
-        
-        <button id="execBtn" class="btn-main" onclick="executeAI()">تنفيذ المهمة الآن</button>
-        <div id="errDiv" class="error"></div>
+        <textarea id="txt" rows="5" placeholder="أدخل النص هنا..."></textarea>
+        <button id="btn" class="btn-main" onclick="run()">بدء التنفيذ</button>
+        <div id="err" class="error"></div>
     </div>
 
-    <div id="resDiv" class="output-area"></div>
+    <div id="res" class="output-area"></div>
 </div>
 
 <script>
-    const API_KEY = "AIzaSyCRWq1Mw41Ls8jV1aXqoKHN1oFaNkGpVQ8"; 
-    const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    const API_KEY = "AIzaSyCRWq1Mw41Ls8jV1aXqoKHN1oFaNkGpVQ8"; // مفتاحك السليم
+    // استخدام v1 (النسخة المستقرة) بدلاً من v1beta لتجنب الزحام
+    const URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-    async function executeAI() {
-        const mode = document.getElementById('actionMode').value;
-        const input = document.getElementById('userInput').value;
-        const resDiv = document.getElementById('resDiv');
-        const errDiv = document.getElementById('errDiv');
-        const btn = document.getElementById('execBtn');
+    async function run() {
+        const mode = document.getElementById('mode').value;
+        const txt = document.getElementById('txt').value;
+        const btn = document.getElementById('btn');
+        const res = document.getElementById('res');
+        const err = document.getElementById('err');
 
-        if(!input) return;
-
+        if(!txt) return;
         btn.disabled = true;
-        btn.innerText = "جاري المعالجة الذكية... ✨";
-        errDiv.style.display = "none";
-        resDiv.style.display = "none";
+        btn.innerText = "جاري الاتصال... ✨";
+        err.style.display = "none";
+        res.style.display = "none";
 
-        // تخصيص الأوامر بناءً على الوضع المختار
-        let systemPrompt = "";
-        if(mode === 'draft') systemPrompt = "أنت خبير صياغة إدارية. اكتب خطاباً رسمياً بليغاً جداً بلسان رئيس القسم حول: ";
-        if(mode === 'summarize') systemPrompt = "أنت مساعد إداري دقيق. لخص النص التالي في نقاط مركزة مع إبراز القرارات المتخذة: ";
-        if(mode === 'consult') systemPrompt = "أنت مستشار أكاديمي. قدم نصيحة إدارية أو قانونية (بناءً على الأعراف الجامعية) بخصوص: ";
-        if(mode === 'tasks') systemPrompt = "حلل النص التالي واستخرج منه قائمة مهام محددة (To-Do List) مع تحديد المسؤوليات إن وجدت: ";
+        let p = "";
+        if(mode === 'draft') p = "اكتب خطاباً رسمياً بليغاً بلسان رئيس القسم حول: ";
+        if(mode === 'sum') p = "لخص النص التالي في نقاط دقيقة: ";
+        if(mode === 'task') p = "استخرج قائمة المهام المطلوبة من هذا النص: ";
+        if(mode === 'adv') p = "قدم نصيحة إدارية أكاديمية بخصوص: ";
 
         try {
-            const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+            const r = await fetch(URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: systemPrompt + input }] }]
-                })
+                body: JSON.stringify({ contents: [{ parts: [{ text: p + txt }] }] })
             });
-
-            const data = await response.json();
-
-            if (data.error) {
-                if(data.error.status === "RESOURCE_EXHAUSTED") throw new Error("المحرك مشغول حالياً، يرجى إعادة المحاولة بعد دقيقة.");
-                throw new Error(data.error.message);
-            }
-
-            if (data.candidates) {
-                let aiText = data.candidates[0].content.parts[0].text;
-                resDiv.innerHTML = `<div class='badge'>النتيجة:</div><br>` + aiText.replace(/\n/g, "<br>");
-                resDiv.style.display = "block";
-            }
+            const d = await r.json();
+            if(d.error) throw new Error(d.error.message);
+            res.innerText = d.candidates[0].content.parts[0].text;
+            res.style.display = "block";
         } catch (e) {
-            errDiv.innerText = e.message;
-            errDiv.style.display = "block";
+            err.innerText = "تنبيه: " + e.message;
+            err.style.display = "block";
         } finally {
             btn.disabled = false;
-            btn.innerText = "تنفيذ المهمة الآن";
+            btn.innerText = "بدء التنفيذ";
         }
     }
 </script>
-
 </body>
 </html>
 
